@@ -67,3 +67,31 @@ export async function getUserByClerkId(clerkId:string){
         console.log("Error in getUserByClerkId",error); 
     }
 }
+
+
+export async function getDbUserId(){
+    try{
+       const {userId}=await auth();
+       
+       if(!userId){
+        throw new Error("No user id found");
+       }
+
+       const user=await prisma.user.findUnique({
+        where: {
+            clerkId: userId,
+        },
+    })
+    if(!user){
+        throw new Error("No user found");
+    }
+
+    return user.id;
+
+    }
+    catch(error){
+        console.log("Error in getDbUserId",error); 
+    }
+}
+
+
