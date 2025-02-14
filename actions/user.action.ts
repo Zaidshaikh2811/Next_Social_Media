@@ -43,3 +43,27 @@ export default  async function syncUser(){
 
 
 }
+
+
+export async function getUserByClerkId(clerkId:string){
+    try{
+        const user=await prisma.user.findUnique({
+            where: {
+                clerkId: clerkId,
+            },
+            include:{
+                _count:{
+                    select: {
+                        posts: true,
+                        followers: true,
+                        following: true,
+                    }
+                }
+            }
+        })
+        return user;
+    }
+    catch(error){
+        console.log("Error in getUserByClerkId",error); 
+    }
+}
