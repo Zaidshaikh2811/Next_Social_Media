@@ -1,3 +1,5 @@
+"use server"
+
 import prisma from "@/prisma/prisma";
 import { getDbUserId } from "./user.action";
 import { revalidatePath } from "next/cache";
@@ -22,6 +24,7 @@ export async function createPost(content:string,image:string){
                 authorId:userId
             }
         })
+       
         revalidatePath("/")
         return { result:true,post}
     }

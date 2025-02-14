@@ -64,7 +64,10 @@ export async function getUserByClerkId(clerkId:string){
         return user;
     }
     catch(error){
-        console.log("Error in getUserByClerkId",error); 
+        return {
+            success:false,
+            message:"Error in getUserByClerkId"
+        }
     }
 }
 
@@ -90,8 +93,128 @@ export async function getDbUserId(){
 
     }
     catch(error){
-        console.log("Error in getDbUserId",error); 
+       return{
+           success:false,
+           message:"Error in getDbUserId"
+       }
     }
 }
 
 
+export async function getRandomUser()
+{
+    try{
+        const userId=await getDbUserId();
+        if(!userId){
+            return {
+                success:false,
+                message:"No user id found"
+            }
+        }
+        const users=await prisma.user.findMany({
+            where:{
+                AND:[
+                    // { NOT:{id:userId} },
+                    {
+                        NOT:{
+                            followers:{some:{followerId:userId}}
+                        }
+                    }
+                ]
+            },
+            select:{
+                id:true,
+                name:true,
+                username:true,
+                image:true,
+                _count:{
+                    select: {
+                        followers: true,
+                    }
+                }
+            }
+        });
+
+        return {
+            success:true,
+            users
+        }
+      
+
+    }catch(error){
+        return {
+            success:false,
+            message:"Error in getRandomUser"
+        }
+    }
+}
+
+export async function toggleFollow(targetUserId:string){
+    try{
+
+        const userId=await getDbUserId();
+        if(!userId){
+            return {
+                success:false,
+                message:"No user id found"
+            }
+        }
+        if(userId===targetUserId){
+            return {
+                success:false,
+                message:"You can't follow yourself"
+            }
+        }
+        const follow=await prisma.follows.findUnique({
+            where: {
+                followerId_followingId: {
+                    followerId: userId,
+                    followingId: targetUserId,
+                }
+            }
+        } 
+        );
+
+
+            if(follow){
+                await prisma.follows.delete({
+                    where: {
+                        followerId_followingId: {
+                            followerId: userId,
+                            followingId: targetUserId,
+                        }
+                    }
+                });
+            }else{
+                await prisma.$transaction([
+                    prisma.follows.create({
+                        data: {
+                            followerId: userId,
+                            followingId: targetUserId,
+                        },
+                    }),
+
+                    prisma.notification.create({
+                        data: {
+                            type: "FOLLOW",
+                            userId: targetUserId,
+                            creatorId: userId,
+                        },
+                    })
+                    
+                ])
+
+            }
+
+            return {
+                success:true
+                
+            }
+
+    }catch(err){
+        return{
+            success:false,
+            message:"Error in toggleFollow"
+        }
+    }
+}
