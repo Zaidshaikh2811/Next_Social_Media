@@ -3,6 +3,7 @@
 
 import prisma from "@/prisma/prisma";
 import { auth, currentUser } from "@clerk/nextjs/server"
+import { revalidatePath } from "next/cache";
 
 export default  async function syncUser(){
     try{
@@ -105,16 +106,16 @@ export async function getRandomUser()
 {
     try{
         const userId=await getDbUserId();
-        if(!userId){
+        if(!userId  || typeof userId !== 'string'){
             return {
-                success:false,
-                message:"No user id found"
+                success:true,
+                users:[]
             }
         }
         const users=await prisma.user.findMany({
             where:{
                 AND:[
-                    // { NOT:{id:userId} },
+                    { NOT:{id:userId} },
                     {
                         NOT:{
                             followers:{some:{followerId:userId}}
@@ -153,7 +154,7 @@ export async function toggleFollow(targetUserId:string){
     try{
 
         const userId=await getDbUserId();
-        if(!userId){
+        if(!userId  || typeof userId !== 'string'){
             return {
                 success:false,
                 message:"No user id found"
@@ -165,6 +166,7 @@ export async function toggleFollow(targetUserId:string){
                 message:"You can't follow yourself"
             }
         }
+        
         const follow=await prisma.follows.findUnique({
             where: {
                 followerId_followingId: {
@@ -205,6 +207,7 @@ export async function toggleFollow(targetUserId:string){
                 ])
 
             }
+            revalidatePath("/")
 
             return {
                 success:true

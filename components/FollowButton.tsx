@@ -21,7 +21,7 @@ const FollowButton = ({ userId }: {
             }
             toast.success("Followed successfully")
         }
-        catch (error) {
+        catch (error: any) {
 
 
             toast.error(error.message)
