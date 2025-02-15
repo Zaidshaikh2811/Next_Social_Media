@@ -1,4 +1,4 @@
-import getPosts from "@/actions/post.action";
+import { getPosts } from "@/actions/post.action";
 import { getDbUserId } from "@/actions/user.action";
 import CreatePost from "@/components/CreatePost";
 import PostCard from "@/components/PostCard";
@@ -9,7 +9,7 @@ export default async function Home() {
 
   const user = await currentUser();
   const { posts } = await getPosts();
-  const dbUserId = await getDbUserId()
+  const dbUserId: any = await getDbUserId() ?? null
 
 
 
@@ -23,7 +23,7 @@ export default async function Home() {
             <CreatePost /> : null
         }
         <div className="space-y-6">
-          {posts ? posts.map((post) => (<PostCard key={post.id} dbUserId={dbUserId} post={post} />)) : <h3>No Posts To Show</h3>}
+          {posts ? posts.map((post: any) => (<PostCard key={post.id} dbUserId={dbUserId} post={post} />)) : <h3>No Posts To Show</h3>}
         </div>
       </div>
       <div className=" hidden lg:block lg:col-span-4 sticky top-20">

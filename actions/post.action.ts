@@ -55,14 +55,14 @@ export async function createPost(content:string,image:string)  {
 }
 
 
-export default async function getPosts() {
+export  async function getPosts() {
         try{
-            const post=await prisma.post.findMany({
+            const posts=await prisma.post.findMany({
                 orderBy:{createdAt:"desc"},
                 include:{
                     author:{
                         select: {
-                          
+                          id:true,
                             name:true,
                             username:true,
                             image:true,
@@ -94,7 +94,7 @@ export default async function getPosts() {
                     }
                 }
             } )
-            return { success:true, post}
+            return { success:true, posts}
 
         }
         catch(error){
@@ -104,3 +104,143 @@ export default async function getPosts() {
             }
         }
 } 
+
+export async function toggleLike(postId: string) {
+  try {
+    const userId = await getDbUserId();
+    if (!userId || typeof userId !== "string") return;
+
+    // check if like exists
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true },
+    });
+
+    if (!post) throw new Error("Post not found");
+
+    if (existingLike) {
+      // unlike
+      await prisma.like.delete({
+        where: {
+          userId_postId: {
+            userId,
+            postId,
+          },
+        },
+      });
+    } else {
+      // like and create notification (only if liking someone else's post)
+      await prisma.$transaction([
+        prisma.like.create({
+          data: {
+            userId,
+            postId,
+          },
+        }),
+        ...(post.authorId !== userId
+          ? [
+              prisma.notification.create({
+                data: {
+                  type: "LIKE",
+                  userId: post.authorId, // recipient (post author)
+                  creatorId: userId, // person who liked
+                  postId,
+                },
+              }),
+            ]
+          : []),
+      ]);
+    }
+
+    revalidatePath("/");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to toggle like:", error);
+    return { success: false, error: "Failed to toggle like" };
+  }
+}
+
+
+export  async function createComment(postId:string,comment:string){
+  try{
+
+    const userId=await getDbUserId();
+
+    if(!userId || typeof userId !== 'string'){
+        return {
+            success:false,
+            message:"No user id found"
+        }
+    }
+
+
+    const post=await prisma.post.findUnique({
+        where:{id:postId},
+        select:{authorId:true}
+    })
+
+    if (!post) throw new Error("Post not found");
+
+
+    const commentResp=await prisma.comment.create({
+        data:{
+            content:comment,
+            authorId:userId,
+            postId
+        },
+       })
+
+  revalidatePath("/")
+  return {success:true,comment:commentResp}
+
+
+  }
+  catch(error){
+
+    console.error("Failed to create comment:", error);
+    return { success: false, message: "Failed to create comment" };
+  }
+} 
+
+export async function deletePost(postId: string) {
+  try {
+
+    const userId=await getDbUserId();
+
+    if(!userId || typeof userId !== 'string'){
+        return {
+            success:false,
+            message:"No user id found"
+        }
+    }
+
+    const post=await prisma.post.findUnique({
+        where:{id:postId},
+        select:{authorId:true}
+    })
+
+    if (!post) throw new Error("Post not found");
+    if (post.authorId !== userId) throw new Error("Unauthorized - no delete permission");
+
+
+   await prisma.post.delete({
+      where: { id: postId },
+    });
+
+    
+    revalidatePath("/");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete post:", error);
+    return { success: false, error: "Failed to delete post" };
+  }
+}

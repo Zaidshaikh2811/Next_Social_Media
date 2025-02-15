@@ -15,13 +15,27 @@ import { Avatar, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import { LinkIcon, MapPinIcon } from 'lucide-react';
 
+
+export interface User {
+    id: string;
+    name: string;
+    username: string;
+    bio?: string;
+    image?: string;
+    location?: string;
+    website?: string;
+    _count: {
+        followers: number;
+        following: number;
+    };
+}
+
 const Sidebar = async () => {
     const authUser = await currentUser();
     if (!authUser) { return <UnAuthenticatedSidebar /> }
 
-    const user = await getUserByClerkId(authUser.id);
+    const user = await getUserByClerkId(authUser.id) as User | null;
     if (!user) { return <UnAuthenticatedSidebar /> }
-
 
 
     return (
