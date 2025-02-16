@@ -221,3 +221,7 @@ export async function toggleFollow(targetUserId:string){
         }
     }
 }
+
+
+
+export const getUserDetails=async(userId:string) => await prisma.user.findUnique({where:{id:userId}});
