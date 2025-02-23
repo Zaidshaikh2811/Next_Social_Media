@@ -13,38 +13,40 @@ import { Textarea } from './ui/textarea';
 import { formatDistanceToNow } from 'date-fns';
 import { DeleteAlertDialog } from './DeleteAlertDialog';
 
-interface Post {
+export interface Post {
     id: string;
-    content: string;
-    authorId: string;
     createdAt: Date;
-    updatedAt: Date;
-    image: string;
+    content: string;
+    image: string | null;
     author: {
         id: string;
-        name: string;
-        image: string;
         username: string;
+        name: string | null;
+        image: string | null;
     };
-    _count: {
-        likes: number;
-        comments: number;
-    };
-    likes: {
-        id: string;
-        userId: string;
-    }[];
     comments: {
         id: string;
-        content: string;
-        authorId: string;
         createdAt: Date;
+        authorId: string;
+        content: string;
+        postId: string;
         author: {
-            name: string;
-            image: string;
+            id: string;
             username: string;
+            name: string | null;
+            image: string | null;
         };
     }[];
+    likes: {
+        id: string;
+        createdAt: Date;
+        userId: string;
+        postId: string;
+    }[];
+    _count: {
+        comments: number;
+        likes: number;
+    };
 }
 
 const PostCard = ({ post, dbUserId }: {
