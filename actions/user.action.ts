@@ -84,7 +84,8 @@ export async function getDbUserId(){
        const user=await prisma.user.findUnique({
         where: {
             clerkId: userId,
-        },
+         
+        }    ,select: { id: true },
     })
     if(!user){
         throw new Error("No user found");
@@ -94,10 +95,8 @@ export async function getDbUserId(){
 
     }
     catch(error){
-       return{
-           success:false,
-           message:"Error in getDbUserId"
-       }
+        console.log("Error in getDbUserId",error);
+       return null 
     }
 }
 
